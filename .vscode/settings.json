@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "gtk.h": "c",
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "pthread.h": "c"
     }
 }
