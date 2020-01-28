@@ -18,7 +18,7 @@ char buffer[100];
 GObject *Label;
 static void activate(GtkApplication *app , gpointer data);
  
-
+int buf2e,buf2f,keyshm2;
 void set_label_text(const char *text){
     gtk_label_set_text((GtkLabel *)Label,text);
 }
@@ -26,7 +26,7 @@ void set_label_text(const char *text){
 void worker(void *s){
     sleep(1);
     int fd;
-    open(fd,O_WRONLY);
+    fd = open(s,O_WRONLY | O_CREAT,0666);
     int rd;
     while(1){
         P(buf2f);
@@ -36,21 +36,28 @@ void worker(void *s){
         }
         V(buf2e);
         write(fd,buffer,rd);
-        if(rd < 100) break;
-        sleep(1);
+        char text[10];
+        sprintf(text,"%d",rd);
+        set_label_text(text);
+        if(rd == 0) break;
     }
-    
+    close(fd);
+    exit(0);
 }
 
 int main(int argc , char **argv)
 {
+    buf2e = semget(BUF2E,1,IPC_CREAT);
+    buf2f = semget(BUF2F,1,IPC_CREAT);
+    printf("Dest file is %s\n",argv[1]);
     GtkApplication *app;
     int app_status;
-    shmaddr = shmat(keyshm2,0,0);
-    app = gtk_application_new("com.GUItest" , G_APPLICATION_FLAGS_NONE);
+    keyshm2 = shmget(KEYSHM2,0,IPC_CREAT);
+    shmaddr = shmat(keyshm2,NULL,0);
+    app = gtk_application_new("com.GUItest3" , G_APPLICATION_FLAGS_NONE);
     g_signal_connect(app , "activate" , G_CALLBACK(activate) , NULL);
     pthread_t id;
-    pthread_create(&id,NULL,worker,argv[2]);
+    pthread_create(&id,NULL,worker,argv[1]);
     app_status = g_application_run(G_APPLICATION(app) , 1 , argv);
     g_object_unref(app);
     shmdt(shmaddr);
@@ -72,7 +79,7 @@ static void activate(GtkApplication *app , gpointer data)
  
     //可以用该函数获取 Builder 创建的对象，根据 example.ui 文件中设置的 object 的 id 来获取。
     window = gtk_builder_get_object(builder , "window1");
-    gtk_window_set_title((GtkWindow *)window,"second");
+    gtk_window_set_title((GtkWindow *)window,"third");
     gtk_application_add_window(app , GTK_WINDOW(window));
     Label = gtk_builder_get_object(builder,"label1");
     gtk_widget_show(GTK_WIDGET(window));

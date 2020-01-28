@@ -19,7 +19,7 @@ char buffer[101];
 
 GObject *Label;
 static void activate(GtkApplication *app , gpointer data);
- 
+ int buf1e,buf1f,buf2e,buf2f,keyshm,keyshm2;
 
 void set_label_text(const char *text){
     gtk_label_set_text((GtkLabel *)Label,text);
@@ -30,28 +30,37 @@ void worker(){
     while(1){
         P(buf1f);
         int rd = shmaddr1[0];
-        for(int i = 0;i < rd;i++){
+        for(int i = 0;i <101;i++){
             buffer[i] = shmaddr1[i];
         }
         V(buf1e);
         P(buf2e);
-        for(int i = 0;i < rd;i++){
+        for(int i = 0;i <101;i++){
             shmaddr2[i] = buffer[i];
         }
         V(buf2f);
-        if(rd < 100) break;
-        sleep(1);
+        char text[10];
+        sprintf(text,"%d",rd);
+        set_label_text(text);
+        if(rd == 0) break;
     }
-
+    exit(0);
 }
 
 int main(int argc , char **argv)
 {
     GtkApplication *app;
     int app_status;
-    shmaddr1 = shmat(keyshm,0,0);
-    shmaddr2 = shmat(keyshm2,0,0);
-    app = gtk_application_new("com.GUItest" , G_APPLICATION_FLAGS_NONE);
+    keyshm = shmget(KEYSHM,0,IPC_CREAT);
+    keyshm2 = shmget(KEYSHM2,0,IPC_CREAT);
+    shmaddr1 = shmat(keyshm,NULL,0);
+    shmaddr2 = shmat(keyshm2,NULL,0);
+
+    buf1e = semget(BUF1E,1,IPC_CREAT);
+    buf1f = semget(BUF1F,1,IPC_CREAT);
+    buf2e = semget(BUF2E,1,IPC_CREAT);
+    buf2f = semget(BUF2F,1,IPC_CREAT);
+    app = gtk_application_new("com.GUItest2" , G_APPLICATION_FLAGS_NONE);
     g_signal_connect(app , "activate" , G_CALLBACK(activate) , NULL);
     pthread_t id;
     pthread_create(&id,NULL,worker,NULL);

@@ -14,7 +14,7 @@
 
 char *shmaddr;
 char buffer[100];
-
+int buf1e,buf1f,keyshm;
 GObject *Label;
 static void activate(GtkApplication *app , gpointer data);
  
@@ -28,8 +28,9 @@ void worker(void *s){
     char *source = (char *)s;
     int fd;
     size_t rd;
-    open(s,O_RDONLY);
+    fd = open(s,O_RDONLY);
     while((rd = read(fd,buffer,100)) != 0){
+        printf("rd = %d\n",rd);
         P(buf1e);
         shmaddr[0] = rd;
         for(int i = 1; i< rd + 1;i++){
@@ -39,20 +40,25 @@ void worker(void *s){
         char text[10];
         sprintf(text,"%d",rd);
         set_label_text(text);
-        sleep(1);
     }
+    printf("rd = %d\n",rd);
     P(buf1e);
     shmaddr[0] = 0;
     V(buf1f);
+    close(fd);
+    exit(0);
 }
 
 int main(int argc , char **argv)
 {
     GtkApplication *app;
     int app_status;
-    
-    char *source = argv[1];
-    shmaddr = shmat(keyshm,0,0);
+    buf1e = semget(BUF1E,1,IPC_CREAT);
+    buf1f = semget(BUF1F,1,IPC_CREAT);
+    char *source = argv[0];
+    printf("Source file is %s\n",source);
+    keyshm = shmget(KEYSHM,0,IPC_CREAT);
+    shmaddr = shmat(keyshm,NULL,0);
     app = gtk_application_new("com.GUITest" , G_APPLICATION_FLAGS_NONE);
     g_signal_connect(app , "activate" , G_CALLBACK(activate) , NULL);
     pthread_t id;

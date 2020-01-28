@@ -3,12 +3,12 @@
 #include <sys/types.h>
 
 
-const int keyshm = 12450;
-const int keyshm2 = 12449;
-const int buf1f = 12451;
-const int buf1e = 12452;
-const int buf2f = 12453;
-const int buf2e = 12454;
+#define KEYSHM 12450
+#define KEYSHM2  12449
+#define BUF1F  12451
+#define BUF1E  12452
+#define BUF2F  12453
+#define BUF2E  12454
 
 
 union semun {

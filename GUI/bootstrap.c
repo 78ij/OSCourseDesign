@@ -8,16 +8,18 @@
 #include <sys/ipc.h>
 #include "pv.h"
 
+int keyshm,keyshm2,buf1f,buf1e,buf2f,buf2e;
+
 
 int main(int argc,char **argv){
 
 
-    shmget(keyshm,101,IPC_CREAT|IPC_EXCL|0666);
-    shmget(keyshm2,101,IPC_CREAT|IPC_EXCL|0666);
-    semget(buf1e,1,IPC_CREAT|IPC_EXCL|0666);
-    semget(buf2e,1,IPC_CREAT|IPC_EXCL|0666);
-    semget(buf1f,1,IPC_CREAT|IPC_EXCL|0666);
-    semget(buf2f,1,IPC_CREAT|IPC_EXCL|0666);
+    keyshm = shmget(KEYSHM,101,IPC_CREAT|0666);
+    keyshm2 = shmget(KEYSHM2,101,IPC_CREAT|0666);
+    buf1e = semget(BUF1E,1,IPC_CREAT|0666);
+    buf1f = semget(BUF1F,1,IPC_CREAT|0666);
+    buf2e = semget(BUF2E,1,IPC_CREAT|0666);
+    buf2f = semget(BUF2F,1,IPC_CREAT|0666);
 
     semctl(buf1e,0,SETVAL,1);
     semctl(buf1f,0,SETVAL,0);
