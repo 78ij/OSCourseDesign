@@ -14,6 +14,8 @@
 #include <string.h>
 #include <fstream>
 #include <iostream>
+#include <pwd.h>
+#include <map>
 using namespace std;
 
 GObject *Label;
@@ -29,6 +31,8 @@ double MemHistory[10] = {0};
 double CPUHistory[10] = {0};
 int total = 0;
 int idle = 0;
+int memall;
+
 gboolean  draw_callback (GtkWidget *widget, cairo_t *cr, gpointer data)
 {
     guint width, height;
@@ -84,9 +88,44 @@ void fillinfolabel(){
     int infofd = open("/proc/cpuinfo",O_RDONLY);
     char buf[5000];
     read(infofd,buf,5000);
+
     string st(buf);
-    gtk_label_set_text((GtkLabel *)Label,buf);
     close(infofd);
+    infofd = open("/proc/version",O_RDONLY);
+    int size = read(infofd,buf,5000);
+    close(infofd);
+    buf[size] = '\0';
+    int pos = st.find("processor");
+    st.replace(pos,9,"逻辑处理核心编号");
+
+    pos = st.find("vendor_id");
+    st.replace(pos,9,"处理器制造商");
+
+    pos = st.find("cpu family");
+    st.replace(pos,10,"CPU产品系列代号");
+
+    pos = st.find("model");
+    st.replace(pos,5,"CPU代数");
+
+    pos = st.find("model name");
+    st.replace(pos,10,"CPU名称");
+
+    pos = st.find("stepping");
+    st.replace(pos,8,"CPU版本");
+
+    pos = st.find("microcode");
+    st.replace(pos,9,"CPU微代码");
+
+    pos = st.find("cpu MHz");
+    st.replace(pos,7,"CPU主频（MHz)");
+
+    pos = st.find("cache size");
+    st.replace(pos,10,"CPU Cache大小");
+
+    pos = st.find("physical id");
+    st = st.substr(0,pos);
+    st += "\nLinux版本：\t" + string(buf);
+    gtk_label_set_text((GtkLabel *)Label,st.c_str());
 }
 
 void updatememinfo(){
@@ -112,6 +151,7 @@ void updatememinfo(){
         MemHistory[i] = MemHistory[i + 1];
     }
     MemHistory[9] = (double)(total - free) / total;
+    memall = total;
     gtk_widget_queue_draw_area(GTK_WIDGET(MEMGraph),0,0,300,200);
     gtk_label_set_text((GtkLabel *)MEMLabel,out.c_str());
 }
@@ -142,29 +182,72 @@ void updateCPUinfo(){
 }
 
 void updateproc(){
+    gtk_list_store_clear(ListStore);
     GtkTreeIter   iter;
+    DIR *dp = opendir("/proc");
+    struct dirent *dirp;
+    struct stat statbuf;
+    struct passwd *pwd;
+    string cmd;
+    string path;
+    while(( dirp = readdir(dp)) != NULL){
+        if(strcmp(dirp->d_name,".") == 0 || strcmp(dirp->d_name,"..") == 0){
+            continue;
+        }
+        path = "/proc/";
+        path = path + string(dirp->d_name);
+        lstat(path.c_str(),&statbuf);
+        if(S_ISDIR(statbuf.st_mode)){
+            if(isdigit((dirp->d_name)[0])){
+                int pid = atoi(dirp->d_name);
+                int uid;
+                path = path + "/status";
+                ifstream cpustream(path);
+                char temp[1000];
+                cpustream.getline(temp,1000);
+                cmd = string(temp);
+                cmd = cmd.substr(6);
+                for(int i = 1;i < 8;i++){
+                    cpustream.getline(temp,1000);
+                }                
+                cpustream >> temp;
+                cpustream >> uid;
+                int memcur;
+                for(int i = 0;i < 13;i++){
+                    cpustream.getline(temp,1000);
+                }
+                cpustream >> temp;
+                cpustream >> memcur;
+                pwd = getpwuid(uid);
+                double memcap = (double)memcur / memall * 100;
+                //cout << pid << " " << pwd->pw_name << " " << memcap << endl;
+                gtk_list_store_append (ListStore, &iter);  /* Acquire an iterator */
+                gtk_list_store_set(ListStore,&iter,
+                    0,pid,
+                    1,g_locale_to_utf8(pwd->pw_name,-1,NULL,NULL,NULL),
+                    2,memcap,
+                    3,g_locale_to_utf8(cmd.c_str(),-1,NULL,NULL,NULL),-1);
+            }
+        }
+    }
 
-    gtk_list_store_append (ListStore, &iter);  /* Acquire an iterator */
 
-    gtk_list_store_set (ListStore, &iter,
-                        0, 123123,
-                        1, "Martin Heidegger",
-                        2, 0.0,
-                        3, 0.0,
-                        -1);
 }
 
 void update(){
-    fillinfolabel();
     updatememinfo();
     updateCPUinfo();
-    updateproc();
 }
 
 void *worker(void * parameters){
+    int i = 0;
     while(1){
-        usleep(500000);
+        usleep(1000000);
         update();
+        if(i % 10 == 0)    updateproc();
+        if(i == 0)    fillinfolabel();
+        i++;
+
     }
 }
 
