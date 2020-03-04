@@ -1,9 +1,15 @@
 {
+    "C_Cpp.default.includePath": [
+        "~/linux-4.15.1/include",
+        "~/linux-4.15.1/arch/x86/include"
+    ],
     "files.associations": {
         "gtk.h": "c",
         "stdio.h": "c",
         "pthread.h": "c",
         "ostream": "cpp",
-        "iostream": "cpp"
+        "iostream": "cpp",
+        "fs.h": "c",
+        "algorithm": "c"
     }
 }

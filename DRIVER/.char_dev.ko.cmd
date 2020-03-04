@@ -1,0 +1,1 @@
+cmd_/home/sjm/OSCourseDesign/DRIVER/char_dev.ko := ld -r -m elf_i386 -T ./scripts/module-common.lds --build-id  -o /home/sjm/OSCourseDesign/DRIVER/char_dev.ko /home/sjm/OSCourseDesign/DRIVER/char_dev.o /home/sjm/OSCourseDesign/DRIVER/char_dev.mod.o ;  true
