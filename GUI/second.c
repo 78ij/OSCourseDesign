@@ -28,6 +28,7 @@ void set_label_text(const char *text){
 void worker(){
     sleep(1);
     while(1){
+        sleep(1);
         P(buf1f);
         int rd = shmaddr1[0];
         for(int i = 0;i <101;i++){

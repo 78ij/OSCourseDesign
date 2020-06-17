@@ -20,11 +20,14 @@ int main(int argc,char **argv){
     buf1f = semget(BUF1F,1,IPC_CREAT|0666);
     buf2e = semget(BUF2E,1,IPC_CREAT|0666);
     buf2f = semget(BUF2F,1,IPC_CREAT|0666);
-
-    semctl(buf1e,0,SETVAL,1);
-    semctl(buf1f,0,SETVAL,0);
-    semctl(buf2e,0,SETVAL,1);
-    semctl(buf2f,0,SETVAL,0);
+    union semun one;
+    one.val = 1;
+    union semun ze;
+    ze.val = 0;
+    semctl(buf1e,0,SETVAL,one);
+    semctl(buf1f,0,SETVAL,ze);
+    semctl(buf2e,0,SETVAL,one);
+    semctl(buf2f,0,SETVAL,ze);
 
     char *source = argv[1];
     char *dest = argv[2];

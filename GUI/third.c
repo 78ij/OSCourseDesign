@@ -29,6 +29,7 @@ void worker(void *s){
     fd = open(s,O_WRONLY | O_CREAT,0666);
     int rd;
     while(1){
+        sleep(1);
         P(buf2f);
         rd = shmaddr[0];
         for(int i = 0;i <rd;i++){

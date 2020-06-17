@@ -30,6 +30,7 @@ void worker(void *s){
     size_t rd;
     fd = open(s,O_RDONLY);
     while((rd = read(fd,buffer,100)) != 0){
+        sleep(1);
         printf("rd = %d\n",rd);
         P(buf1e);
         shmaddr[0] = rd;

@@ -36,7 +36,6 @@ int memall;
 gboolean  draw_callback (GtkWidget *widget, cairo_t *cr, gpointer data)
 {
     guint width, height;
-    GdkRGBA color;
     GtkStyleContext *context;
     context = gtk_widget_get_style_context (widget);
 
@@ -62,7 +61,6 @@ gboolean  draw_callback (GtkWidget *widget, cairo_t *cr, gpointer data)
 gboolean  draw_callback_cpu (GtkWidget *widget, cairo_t *cr, gpointer data)
 {
     guint width, height;
-    GdkRGBA color;
     GtkStyleContext *context;
     context = gtk_widget_get_style_context (widget);
 
@@ -190,6 +188,7 @@ void updateproc(){
     struct passwd *pwd;
     string cmd;
     string path;
+    char temp[1000];
     while(( dirp = readdir(dp)) != NULL){
         if(strcmp(dirp->d_name,".") == 0 || strcmp(dirp->d_name,"..") == 0){
             continue;
@@ -203,7 +202,6 @@ void updateproc(){
                 int uid;
                 path = path + "/status";
                 ifstream cpustream(path);
-                char temp[1000];
                 cpustream.getline(temp,1000);
                 cmd = string(temp);
                 cmd = cmd.substr(6);
@@ -218,19 +216,20 @@ void updateproc(){
                 }
                 cpustream >> temp;
                 cpustream >> memcur;
-                pwd = getpwuid(uid);
+                cpustream.close();
                 double memcap = (double)memcur / memall * 100;
+                pwd = getpwuid(uid);
                 //cout << pid << " " << pwd->pw_name << " " << memcap << endl;
                 gtk_list_store_append (ListStore, &iter);  /* Acquire an iterator */
                 gtk_list_store_set(ListStore,&iter,
                     0,pid,
-                    1,g_locale_to_utf8(pwd->pw_name,-1,NULL,NULL,NULL),
+                    1,pwd->pw_name,
                     2,memcap,
-                    3,g_locale_to_utf8(cmd.c_str(),-1,NULL,NULL,NULL),-1);
+                    3,cmd.c_str(),-1);
             }
         }
     }
-
+    closedir(dp);
 
 }
 
@@ -244,11 +243,10 @@ void *worker(void * parameters){
     while(1){
         usleep(1000000);
         update();
-        if(i % 10 == 0)    updateproc();
+        if(i % 10 == 0)updateproc();
         if(i == 0)    fillinfolabel();
         i++;
-
-    }
+    }   
 }
 
 int main(int argc , char **argv)
@@ -270,8 +268,6 @@ static void activate(GtkApplication *app , gpointer data)
 {
     GtkBuilder *builder;
     GObject *window;
-    GObject *button;
-    GObject *entry;
  
     //创建一个 GtkBuilder 。
     builder = gtk_builder_new();
